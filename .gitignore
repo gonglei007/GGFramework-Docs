@@ -1,0 +1,11 @@
+# OS 生成物
+.DS_Store
+Thumbs.db
+
+# Qoder IDE 本地缓存
+.qoder/
+
+# 编辑器/临时文件
+*.tmp
+*.bak
+~$*
