@@ -22,13 +22,17 @@
 - 抽出 `GGFramework-Core`，仅纳入**零第三方依赖**的 `Singleton`/`CoroutineUtil`/`TaskSystem`，配 EditMode 测试。
 - Core **不参与任何现有工程编译**，是纯加法、可逆的"安全基础层"。
 
-### Phase 2（待执行）——接线消费方
+### Phase 2（进行中）——接线消费方
+
+> **进度快照**：**GGUser 试点已完成**（commit `2b70348`，`manifest` 引用 Core `#v0.1.0` + 主/测试 asmdef 加 `GGFramework.Core.Runtime` 引用 + 删除本地 `Singleton`/`CoroutineUtil` 副本，EditMode 68/68 全绿，已推送）。GGResource/GGNetwork/GGUI/Demo 待接。
+>
+> **试点暴露的关键约束**：asmdef 引用**不具传递性**——用到 `Singleton<>` 派生类型的**测试程序集**也必须直接引用 `GGFramework.Core.Runtime`，否则编译报 **CS0012**。GGUser 首跑即因两个测试 asmdef 漏加引用而失败，补齐后全绿。
 
 对每个消费方，**在同一批改动内**完成：
 
 1. `manifest.json` 增加 `"com.gonglei.ggframework.core": "https://github.com/gonglei007/GGFramework-Core.git#v0.1.0"`。
 2. **删除**本地 `Scripts/Dependency/Utils` 下的 `Singleton.cs`/`CoroutineUtil.cs`/`TaskSystem.cs` 副本。
-3. 相关 asmdef 增加对 `GGFramework.Core.Runtime` 的引用。
+3. 相关 asmdef（**含所有测试 asmdef**，见上方 CS0012 约束）增加对 `GGFramework.Core.Runtime` 的引用。
 4. 编译 + 跑该仓库测试验证无回归。
 
 > **关键约束（二义性）**：`Singleton`/`CoroutineUtil` 在**全局命名空间**。若"引用 Core"与"删除本地副本"不同批完成，工程会同时存在两份同名类型 → **类型二义性编译错误**。因此第 1、2 步必须原子提交，不可分步。

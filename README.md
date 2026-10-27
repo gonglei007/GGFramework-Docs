@@ -22,6 +22,8 @@ GGFramework 由多个**彼此独立的 Git 仓库**组成，父目录 `d:\Works\
 ## 文档导航
 
 - **架构**
+  - [整体技术方案](architecture/technical-solution.md)：**统领性方案**——目标/原则、分层架构、各模块技术定位、集成机制、迁移路线、工程规范、测试/CI 与风险
+  - [GGFramework 架构图](architecture/architecture-diagram.md)：分层架构总览、Phase 2 接线进度、Core 引用约束（mermaid 可视化）
   - [整体架构概览](architecture/overview.md)：模块职责、分层、集成方式与关键结构问题
   - [模块依赖图与版本矩阵](architecture/dependency-graph.md)：现状依赖图、目标依赖图、Unity 版本/分支/远程矩阵
   - [源码拷贝集成与副本漂移](architecture/vendoring-drift.md)：vendoring 现状、漂移清单、危害与治理
@@ -35,3 +37,4 @@ GGFramework 由多个**彼此独立的 Git 仓库**组成，父目录 `d:\Works\
 - 模块之间**没有任何工程级依赖声明**（无跨模块 UPM 引用、无跨模块 asmdef 引用），所谓"相互依赖"实际靠**源码拷贝（vendoring）**。
 - 后果：68 组同名文件中 **41 组内容已漂移**；任一模块的修复不会传播到其它副本。
 - 已启动治理：抽出 `GGFramework-Core` 作为共享基础类的单一源（详见 ADR-0001 / ADR-0002）。
+- 迁移进度：Phase 0/1 已完成；**Phase 2 GGUser 试点已接线并验证**（EditMode 68/68），其余消费方待接。整体方案见 [整体技术方案](architecture/technical-solution.md)。
