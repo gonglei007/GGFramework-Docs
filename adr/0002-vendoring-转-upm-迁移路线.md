@@ -22,11 +22,13 @@
 - 抽出 `GGFramework-Core`，仅纳入**零第三方依赖**的 `Singleton`/`CoroutineUtil`/`TaskSystem`，配 EditMode 测试。
 - Core **不参与任何现有工程编译**，是纯加法、可逆的"安全基础层"。
 
-### Phase 2（进行中）——接线消费方
+### Phase 2（已完成）——接线消费方
 
-> **进度快照**：**GGUser 试点已完成**（commit `2b70348`，`manifest` 引用 Core `#v0.1.0` + 主/测试 asmdef 加 `GGFramework.Core.Runtime` 引用 + 删除本地 `Singleton`/`CoroutineUtil` 副本，EditMode 68/68 全绿，已推送）。GGResource/GGNetwork/GGUI/Demo 待接。
+> **进度快照**：**5 个消费方全部接线完成**，均引用 Core `#v0.1.1`（含 `Singleton` 的 `Application.isPlaying` 守卫热修）+ 主/测试 asmdef 加 `GGFramework.Core.Runtime` 引用 + 删除本地 `Singleton`/`CoroutineUtil`/`TaskSystem` 副本：GGResource `ec7dfc9`（编译 exit 0）、GGUI `1c0b631`（master，EditMode 11/11）、GGNetwork `c439bf2`（EditMode 160/160）、GGUser `c77b466`（EditMode 68/68）、Demo `107ffe3`（编译 exit 0）。GGUser 试点原以 `#v0.1.0` 接线（commit `2b70348`），Phase 2 收尾统一重指 `#v0.1.1`。
 >
 > **试点暴露的关键约束**：asmdef 引用**不具传递性**——用到 `Singleton<>` 派生类型的**测试程序集**也必须直接引用 `GGFramework.Core.Runtime`，否则编译报 **CS0012**。GGUser 首跑即因两个测试 asmdef 漏加引用而失败，补齐后全绿。
+>
+> **Demo 特例**：其 `TaskSystem` 副本原在**全局命名空间**（Core 版在 `GGFramework.GGTask`），故删副本后 5 个调用文件须补 `using GGFramework.GGTask;`；Demo 零 asmdef，靠 Core.Runtime 的 `autoReferenced` 被 `Assembly-CSharp` 自动引用。
 
 对每个消费方，**在同一批改动内**完成：
 

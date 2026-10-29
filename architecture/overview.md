@@ -21,32 +21,32 @@ GGFramework 是面向 Unity 游戏客户端的一组**可插拔框架模块**：
 | **GGNetwork** | HTTP / WebSocket / Download / HTTPDNS / ServiceCenter | `GGFramework.GGNetwork`，但混入 `GGFramework.GGTask` | 完整分层：`LocalPackages` ← `Dependency` ← `GGFramework.GGNetwork` ← `Tests` |
 | **GGUI** | UI 框架 | 自有命名空间 | 自有核心落在 `Assembly-CSharp` |
 | **GGUser** | 用户系统、UID 持久化 | `GGFramework.GGUser` 系 | 完整分层 |
-| **Demo** | 集成演示 | **全局命名空间** | 扁平，无分层 |
+| **Demo** | 集成演示 | **全局命名空间**（`TaskSystem` 经 `using GGFramework.GGTask` 引入 Core） | 扁平，无分层 |
 
-## 4. 集成方式：现状 vs 目标
+## 4. 集成方式：接线前 vs 当前
 
-### 现状——源码拷贝（vendoring）
+### 接线前——源码拷贝（vendoring，历史）
 
-模块之间**没有任何工程级依赖声明**：
+接线前模块之间**没有任何工程级依赖声明**：
 
 - `manifest.json` 无跨模块 UPM 引用（除 GGNetwork 依赖 `com.ourpalm.ilruntime` 外全是 `com.unity.*`）。
 - 无跨模块 asmdef 引用；四个库模块此前都**没有 `package.json`**（Core 是第一个）。
-- 实际"依赖"靠拷贝：每个模块在 `Scripts/Dependency/Utils` 各存一份基础类（`Singleton`/`CoroutineUtil`/`GameDebugger`/`TaskSystem`/`ZipUtil`）；GGResource 被整包拷进 GGUI 与 Demo；GGNetwork 与 GGUser 各自拷贝 `UIAdaptor`/`LogAdaptor`；Demo 在 `ggsource/Scripts` 下扁平拷贝了全部模块共 138 个文件。
+- 实际"依赖"靠拷贝：每个模块在 `Scripts/Dependency/Utils` 各存一份基础类（`Singleton`/`CoroutineUtil`/`GameDebugger`/`TaskSystem`/`ZipUtil`）；GGResource 被整包拷进 GGUI 与 Demo；GGNetwork 与 GGUser 各自拷贝 `UIAdaptor`/`LogAdaptor`；Demo 在 `ggsource/Scripts` 下扁平拷贝了全部模块。
 
 详见 [源码拷贝集成与副本漂移](vendoring-drift.md)。
 
-### 目标——UPM git URL 单一源
+### 当前——UPM git URL 单一源（Phase 2 已完成）
 
-以 `GGFramework-Core` 为起点，把共享基础类收敛为**单一源包**，各消费方经 UPM git URL 引用、并**删除本地副本**，从根上消除漂移。路线详见 [ADR-0002](../adr/0002-vendoring-转-upm-迁移路线.md)。
+以 `GGFramework-Core` 为单一源包，**5 个消费方（GGResource/GGUI/GGNetwork/GGUser/Demo）均已**经 UPM git URL 引用 Core `#v0.1.1` 并**删除本地 `Singleton`/`CoroutineUtil`/`TaskSystem` 副本**，基础三类漂移已根除。仍靠拷贝的剩 `GameDebugger`/`ZipUtil`/`UIAdaptor`/`LogAdaptor`（含第三方耦合，留待 Phase 3）。路线详见 [ADR-0002](../adr/0002-vendoring-转-upm-迁移路线.md)。
 
 ## 5. 关键结构性问题（治理清单）
 
-1. **副本漂移**：68 组同名文件中 41 组内容已不一致；源头修复不传播（曾出现 GGResource 的 bug 在 GGUI 副本已修、源头未修的反向漂移）。
+1. **副本漂移**：接线前 68 组同名文件中 41 组内容不一致；源头修复不传播（曾出现 GGResource 的 bug 在 GGUI 副本已修、源头未修的反向漂移）。**Phase 2 后 `Singleton`/`CoroutineUtil`/`TaskSystem` 已单一源化、漂移根除**；剩 `GameDebugger`/`ZipUtil`/`UIAdaptor`/`LogAdaptor` 待 Phase 3。
 2. **命名空间不统一**：GGResource 用 `Loxodon.Framework.Bundles`，GGNetwork 混入 `GGFramework.GGTask`，Demo 全在全局命名空间。
 3. **asmdef 分层不一致**：GGNetwork/GGUser 有完整分层，GGResource/GGUI 自有核心落在 `Assembly-CSharp` 无边界。
-4. **Unity 版本三分裂**：2019.4 / 2021.3 / 6000.3 并存，跨仓库统一编译/测试困难。见 [依赖图与版本矩阵](dependency-graph.md)。
+4. ~~**Unity 版本三分裂**~~（已解决）：5 工程已统一到 6000.3.13f1，跨仓库可单一环境编译/测试。见 [依赖图与版本矩阵](dependency-graph.md)。
 5. **无 CI**：任一仓库都没有 GitHub Actions 等自动化；Core 抽出后是引入 CI 的天然起点。
-6. **测试覆盖极不均**：GGNetwork、GGUser 有测试，GGResource/GGUI 此前零测试，Core 现有 10 个 EditMode 用例。
+6. **测试覆盖极不均**：Core(10)、GGNetwork(160)、GGUser(68)、GGUI(11) 有 EditMode 测试且全绿；GGResource/Demo 仍无自动化测试（接线以编译 exit 0 为门槛）。
 
 ## 6. 工程卫生约定
 

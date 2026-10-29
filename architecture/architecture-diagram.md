@@ -1,6 +1,6 @@
 # GGFramework 架构图
 
-> 本文用可视化图呈现 GGFramework 的**分层架构**、**Phase 2 接线进度**与 **Core 单一源引用约束**。
+> 本文用可视化图呈现 GGFramework 的**分层架构**、**Phase 2 接线进度（已完成）**与 **Core 单一源引用约束**。
 > 现状 / 目标的**逐仓库依赖图**与版本矩阵见 [模块依赖图与版本矩阵](dependency-graph.md)；文字方案见 [整体技术方案](technical-solution.md)。
 
 ---
@@ -60,32 +60,32 @@ graph TD
     GGUser --> StateMachine
 ```
 
-> 说明：`GGResource --> Core` 等四条边是**目标态**（经 UPM git URL 引用单一源）。现状中除 GGUser 外仍是源码拷贝，见 §2 与 [vendoring-drift](vendoring-drift.md)。
+> 说明：`GGResource --> Core` 等五条边**均已实现**（Phase 2 完成，经 UPM git URL 引用单一源 `#v0.1.1` 并删除本地副本），见 §2 与 [vendoring-drift](vendoring-drift.md)。
 
 ---
 
-## 2. Phase 2 接线进度（现状快照）
+## 2. Phase 2 接线进度（已完成）
 
-粗实线 = 已接线（UPM git URL 引用 Core 并删除本地副本）；虚线 = 待接线（仍持有本地副本）。
+粗实线 = 已接线（UPM git URL 引用 Core `#v0.1.1` 并删除本地副本）。**5 个消费方全部接线完成**，基础类副本漂移已消除。
 
 ```mermaid
 graph TD
-    Core["GGFramework-Core<br/>tag v0.1.0"]
+    Core["GGFramework-Core<br/>tag v0.1.1"]
 
+    GGResource["GGResource<br/>已接线 · 编译 exit 0"]
+    GGNetwork["GGNetwork<br/>已接线 · EditMode 160/160"]
+    GGUI["GGUI<br/>已接线 · EditMode 11/11"]
     GGUser["GGUser<br/>已接线 · EditMode 68/68"]
-    GGResource["GGResource<br/>待接（2021.3）"]
-    GGNetwork["GGNetwork<br/>待接（2021.3）"]
-    GGUI["GGUI<br/>待接（2021.3）"]
-    Demo["Demo<br/>待接（2019.4 兼容性待评估）"]
+    Demo["Demo<br/>已接线 · 编译 exit 0"]
 
+    GGResource ==>|UPM git URL| Core
+    GGNetwork ==>|UPM git URL| Core
+    GGUI ==>|UPM git URL| Core
     GGUser ==>|UPM git URL| Core
-    GGResource -.->|待接线| Core
-    GGNetwork -.->|待接线| Core
-    GGUI -.->|待接线| Core
-    Demo -.->|待接线| Core
+    Demo ==>|UPM git URL| Core
 ```
 
-> 推广前提：本机仅装 Unity 6000.3.13f1，只能真实验证 GGUser；2021.3/2019.4 仓库接线须在对应版本环境编译验证后再推送。详见 [整体技术方案](technical-solution.md) §6.1。
+> 验证前提（已满足）：5 个工程已统一到 Unity 6000.3.13f1，本机已对全部仓库真实编译/测试验证后推送。详见 [整体技术方案](technical-solution.md) §6.1。
 
 ---
 

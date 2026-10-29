@@ -11,11 +11,11 @@ GGFramework 由多个**彼此独立的 Git 仓库**组成，父目录 `d:\Works\
 | 仓库 | 职责 | Unity 版本 | 默认分支 | 链接 |
 |---|---|---|---|---|
 | GGFramework-Core | 共享基础设施单一源（`Singleton` / `CoroutineUtil` / `TaskSystem`），UPM 包 | 2021.3+（`package.json` 声明） | main | [repo](https://github.com/gonglei007/GGFramework-Core) |
-| GGFramework-GGResource | 资源加载 / AssetBundle 管理（自身代码命名空间为 `Loxodon.Framework.Bundles`） | 2021.3.4f1c1 | main | [repo](https://github.com/gonglei007/GGFramework-GGResource) |
-| GGFramework-GGNetwork | 网络框架：HTTP / WebSocket / Download / HTTPDNS（依赖 ILRuntime） | 2021.3.4f1c1 | main | [repo](https://github.com/gonglei007/GGFramework-GGNetwork) |
-| GGFramework-GGUI | UI 框架（内含 GGResource 的整包源码拷贝） | 2021.3.4f1c1 | **master** | [repo](https://github.com/gonglei007/GGFramework-GGUI) |
+| GGFramework-GGResource | 资源加载 / AssetBundle 管理（自身代码命名空间为 `Loxodon.Framework.Bundles`） | 6000.3.13f1 | main | [repo](https://github.com/gonglei007/GGFramework-GGResource) |
+| GGFramework-GGNetwork | 网络框架：HTTP / WebSocket / Download / HTTPDNS（依赖 ILRuntime） | 6000.3.13f1 | main | [repo](https://github.com/gonglei007/GGFramework-GGNetwork) |
+| GGFramework-GGUI | UI 框架（内含 GGResource 的整包源码拷贝） | 6000.3.13f1 | **master** | [repo](https://github.com/gonglei007/GGFramework-GGUI) |
 | GGFramework-GGUser | 用户系统（`UserSystem`、UID 持久化） | 6000.3.13f1 | main | [repo](https://github.com/gonglei007/GGFramework-GGUser) |
-| GGFramework-Demo | 集成演示（扁平拷贝了全部模块源码，使用全局命名空间） | 2019.4.18f1c1 | main | [repo](https://github.com/gonglei007/GGFramework-Demo) |
+| GGFramework-Demo | 集成演示（扁平拷贝了全部模块源码，使用全局命名空间） | 6000.3.13f1 | main | [repo](https://github.com/gonglei007/GGFramework-Demo) |
 
 > ⚠️ 注意：默认分支不统一——**GGUI 用 `master`，其余用 `main`**。批量脚本不能假设分支名一致。
 
@@ -34,7 +34,7 @@ GGFramework 由多个**彼此独立的 Git 仓库**组成，父目录 `d:\Works\
 
 ## 现状速览
 
-- 模块之间**没有任何工程级依赖声明**（无跨模块 UPM 引用、无跨模块 asmdef 引用），所谓"相互依赖"实际靠**源码拷贝（vendoring）**。
+- 模块之间此前**没有任何工程级依赖声明**（无跨模块 UPM 引用、无跨模块 asmdef 引用），所谓"相互依赖"实际靠**源码拷贝（vendoring）**。
 - 后果：68 组同名文件中 **41 组内容已漂移**；任一模块的修复不会传播到其它副本。
-- 已启动治理：抽出 `GGFramework-Core` 作为共享基础类的单一源（详见 ADR-0001 / ADR-0002）。
-- 迁移进度：Phase 0/1 已完成；**Phase 2 GGUser 试点已接线并验证**（EditMode 68/68），其余消费方待接。整体方案见 [整体技术方案](architecture/technical-solution.md)。
+- 治理：抽出 `GGFramework-Core` 作为共享基础类的单一源（详见 ADR-0001 / ADR-0002）。
+- **迁移进度：Phase 0/1/2 已全部完成。** 5 个消费方（GGResource / GGUI / GGNetwork / GGUser / Demo）均已通过 UPM git URL 接线到 **Core `v0.1.1`** 并删除本地 `Singleton`/`CoroutineUtil`/`TaskSystem` 副本，基础类副本漂移已彻底消除；5 个工程已统一到 Unity 6000.3.13f1，本机可真实编译/测试全部仓库。剩余 `GameDebugger`/`ZipUtil`/`UIAdaptor`/`LogAdaptor`（含第三方耦合）留待 Phase 3。整体方案见 [整体技术方案](architecture/technical-solution.md)。
