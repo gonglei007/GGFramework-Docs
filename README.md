@@ -31,10 +31,11 @@ GGFramework 由多个**彼此独立的 Git 仓库**组成，父目录 `d:\Works\
   - [ADR 索引与模板](adr/README.md)
   - [ADR-0001 Core 抽为独立仓库](adr/0001-core-独立仓库.md)
   - [ADR-0002 vendoring → UPM 迁移路线](adr/0002-vendoring-转-upm-迁移路线.md)
+  - [ADR-0003 Phase 3 改为副本对齐](adr/0003-phase3-改为副本对齐.md)
 
 ## 现状速览
 
 - 模块之间此前**没有任何工程级依赖声明**（无跨模块 UPM 引用、无跨模块 asmdef 引用），所谓"相互依赖"实际靠**源码拷贝（vendoring）**。
 - 后果：68 组同名文件中 **41 组内容已漂移**；任一模块的修复不会传播到其它副本。
 - 治理：抽出 `GGFramework-Core` 作为共享基础类的单一源（详见 ADR-0001 / ADR-0002）。
-- **迁移进度：Phase 0/1/2 已全部完成。** 5 个消费方（GGResource / GGUI / GGNetwork / GGUser / Demo）均已通过 UPM git URL 接线到 **Core `v0.1.1`** 并删除本地 `Singleton`/`CoroutineUtil`/`TaskSystem` 副本，基础类副本漂移已彻底消除；5 个工程已统一到 Unity 6000.3.13f1，本机可真实编译/测试全部仓库。剩余 `GameDebugger`/`ZipUtil`/`UIAdaptor`/`LogAdaptor`（含第三方耦合）留待 Phase 3。整体方案见 [整体技术方案](architecture/technical-solution.md)。
+- **迁移进度：Phase 0/1/2/3 已全部完成。** 5 个消费方（GGResource / GGUI / GGNetwork / GGUser / Demo）均已通过 UPM git URL 接线到 **Core `v0.1.1`** 并删除本地 `Singleton`/`CoroutineUtil`/`TaskSystem` 副本，基础类副本漂移已彻底消除；5 个工程已统一到 Unity 6000.3.13f1，本机可真实编译/测试全部仓库。含第三方耦合的 `GameDebugger`/`ZipUtil`/`UIAdaptor`/`LogAdaptor` 因 UPM 包无法引用工程内第三方、不纳入 Core，改以**副本对齐**治理（Phase 3 已完成，详见 [ADR-0003](adr/0003-phase3-改为副本对齐.md)）：`UIAdaptor` P0 回填、`GameDebugger` 对齐 canonical（Demo 保留有意禁用），`ZipUtil`/`LogAdaptor` 已一致。整体方案见 [整体技术方案](architecture/technical-solution.md)。

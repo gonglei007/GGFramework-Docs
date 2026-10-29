@@ -37,11 +37,11 @@ GGFramework 是面向 Unity 游戏客户端的一组**可插拔框架模块**：
 
 ### 当前——UPM git URL 单一源（Phase 2 已完成）
 
-以 `GGFramework-Core` 为单一源包，**5 个消费方（GGResource/GGUI/GGNetwork/GGUser/Demo）均已**经 UPM git URL 引用 Core `#v0.1.1` 并**删除本地 `Singleton`/`CoroutineUtil`/`TaskSystem` 副本**，基础三类漂移已根除。仍靠拷贝的剩 `GameDebugger`/`ZipUtil`/`UIAdaptor`/`LogAdaptor`（含第三方耦合，留待 Phase 3）。路线详见 [ADR-0002](../adr/0002-vendoring-转-upm-迁移路线.md)。
+以 `GGFramework-Core` 为单一源包，**5 个消费方（GGResource/GGUI/GGNetwork/GGUser/Demo）均已**经 UPM git URL 引用 Core `#v0.1.1` 并**删除本地 `Singleton`/`CoroutineUtil`/`TaskSystem` 副本**，基础三类漂移已根除。含第三方耦合的 `GameDebugger`/`ZipUtil`/`UIAdaptor`/`LogAdaptor` 因 **UPM 包无法引用工程内第三方**、不纳入 Core，改以**副本对齐**治理（Phase 3 已完成，见 [ADR-0003](../adr/0003-phase3-改为副本对齐.md)）。路线详见 [ADR-0002](../adr/0002-vendoring-转-upm-迁移路线.md)。
 
 ## 5. 关键结构性问题（治理清单）
 
-1. **副本漂移**：接线前 68 组同名文件中 41 组内容不一致；源头修复不传播（曾出现 GGResource 的 bug 在 GGUI 副本已修、源头未修的反向漂移）。**Phase 2 后 `Singleton`/`CoroutineUtil`/`TaskSystem` 已单一源化、漂移根除**；剩 `GameDebugger`/`ZipUtil`/`UIAdaptor`/`LogAdaptor` 待 Phase 3。
+1. **副本漂移**：接线前 68 组同名文件中 41 组内容不一致；源头修复不传播（曾出现 GGResource 的 bug 在 GGUI 副本已修、源头未修的反向漂移）。**Phase 2 后 `Singleton`/`CoroutineUtil`/`TaskSystem` 已单一源化、漂移根除**；**Phase 3 对含第三方耦合的 `GameDebugger`/`UIAdaptor`/`ZipUtil`/`LogAdaptor` 做了副本对齐**（不纳入 Core，因 UPM 包无法引用工程内第三方）：`UIAdaptor` P0 回填、`GameDebugger` 对齐 canonical（Demo 保留有意禁用），`ZipUtil`/`LogAdaptor` 已一致，无意义漂移清零（见 [ADR-0003](../adr/0003-phase3-改为副本对齐.md)）。
 2. **命名空间不统一**：GGResource 用 `Loxodon.Framework.Bundles`，GGNetwork 混入 `GGFramework.GGTask`，Demo 全在全局命名空间。
 3. **asmdef 分层不一致**：GGNetwork/GGUser 有完整分层，GGResource/GGUI 自有核心落在 `Assembly-CSharp` 无边界。
 4. ~~**Unity 版本三分裂**~~（已解决）：5 工程已统一到 6000.3.13f1，跨仓库可单一环境编译/测试。见 [依赖图与版本矩阵](dependency-graph.md)。

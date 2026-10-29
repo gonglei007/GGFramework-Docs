@@ -8,6 +8,7 @@
 |---|---|---|
 | [0001](0001-core-独立仓库.md) | 将 GGFramework.Core 抽为独立仓库 | 已接受 |
 | [0002](0002-vendoring-转-upm-迁移路线.md) | vendoring → UPM 单一源迁移路线 | 已接受（进行中） |
+| [0003](0003-phase3-改为副本对齐.md) | Phase 3 改为副本对齐而非 Core.Optional 纳入 | 已接受 |
 
 ## 命名约定
 

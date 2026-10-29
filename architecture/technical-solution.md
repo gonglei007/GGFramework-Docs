@@ -7,7 +7,7 @@
 > - 依赖关系与版本矩阵：[模块依赖图与版本矩阵](dependency-graph.md)
 > - 分层架构可视化：[GGFramework 架构图](architecture-diagram.md)
 > - 拷贝集成与漂移实证：[源码拷贝集成与副本漂移](vendoring-drift.md)
-> - 关键决策：[ADR-0001 Core 独立仓库](../adr/0001-core-独立仓库.md)、[ADR-0002 迁移路线](../adr/0002-vendoring-转-upm-迁移路线.md)
+> - 关键决策：[ADR-0001 Core 独立仓库](../adr/0001-core-独立仓库.md)、[ADR-0002 迁移路线](../adr/0002-vendoring-转-upm-迁移路线.md)、[ADR-0003 Phase 3 副本对齐](../adr/0003-phase3-改为副本对齐.md)
 
 ---
 
@@ -37,7 +37,7 @@ GGFramework 是面向 Unity 游戏客户端的一组**可插拔框架模块**：
 ## 2. 设计原则
 
 1. **单一源（Single Source of Truth）**：共享基础类只有一个权威版本，消费方引用而非拷贝。架构文档同理，统一沉淀在 `GGFramework-Docs`。
-2. **可插拔 / 低耦合**：模块之间尽量只依赖基础设施层（Core），功能模块之间不直接强绑定；第三方耦合隔离在各自模块或可选子程序集内。
+2. **可插拔 / 低耦合**：模块之间尽量只依赖基础设施层（Core），功能模块之间不直接强绑定；第三方耦合隔离在各自模块内（含第三方耦合的共享类**不纳入 Core**，改以副本对齐治理，见 §6 Phase 3）。
 3. **增量、可回退**：迁移分阶段推进，每阶段要么纯加法、要么原子替换，任一阶段都能独立回退（见 §6）。
 4. **Unity 原生机制优先**：用 UPM git URL 而非 git submodule 共享代码；用 asmdef 而非目录约定划分程序集边界。
 5. **版本锁定**：跨仓库引用锁定 tag（如 `#v0.1.1`），避免 `#branch` 带来的不可复现构建。
@@ -65,7 +65,7 @@ GGFramework 是面向 Unity 游戏客户端的一组**可插拔框架模块**：
 └───────────────────────────────────────────────┘
 ```
 
-**依赖方向**：上层依赖下层，同层之间不直接依赖。功能模块统一经 UPM git URL 依赖 Core；第三方依赖被隔离在各自模块内，不上抬到 Core 主体（含第三方耦合的共享类走 Core.Optional 子程序集，见 §6 Phase 3）。
+**依赖方向**：上层依赖下层，同层之间不直接依赖。功能模块统一经 UPM git URL 依赖 Core；第三方依赖被隔离在各自模块内，不上抬到 Core 主体（含第三方耦合的共享类**不纳入 Core**，改为副本对齐治理，见 §6 Phase 3 与 [ADR-0003](../adr/0003-phase3-改为副本对齐.md)）。
 
 ---
 
@@ -117,14 +117,14 @@ Core 是 UPM 包，**仓库根即包根**（无需 `?path=`），包名 `com.gon
 
 ## 6. 迁移路线（Phase 0–4）
 
-> 决策依据与取舍见 [ADR-0002](../adr/0002-vendoring-转-upm-迁移路线.md)。此处给**当前进度快照**。
+> 决策依据与取舍见 [ADR-0002](../adr/0002-vendoring-转-upm-迁移路线.md)（Phase 0–2、4）与 [ADR-0003](../adr/0003-phase3-改为副本对齐.md)（Phase 3 改为副本对齐）。此处给**当前进度快照**。
 
 | 阶段 | 内容 | 状态 |
 |---|---|---|
 | **Phase 0** | 缺陷修复（GGResource `GetAssets<T>` 恒真、`loadingList` 空引用、`DestroyObject` KeyNotFound；GGUser `SaveUID/LoadUID` 句柄泄漏；GGNetwork `Encode` 超 16MB 静默截断）+ 工程卫生（`.gitignore` 统一 + `git rm --cached`） | 已完成 |
 | **Phase 1** | 抽出 `GGFramework-Core`（零第三方依赖的 `Singleton`/`CoroutineUtil`/`TaskSystem` + EditMode 测试）；纯加法、不参与任何现有工程编译 | 已完成（tag `v0.1.0` commit `0d4f009`；后热修 `Singleton` 补 `Application.isPlaying` 守卫升 `v0.1.1` commit `a5395876`） |
 | **Phase 2** | 接线消费方：`manifest` 引用 Core + asmdef 加引用 + 删本地副本 + 回归测试，逐仓库原子进行 | **已完成**：5 消费方全部接线到 Core `v0.1.1`（GGResource `ec7dfc9`、GGUI `1c0b631`、GGNetwork `c439bf2`、GGUser `c77b466`、Demo `107ffe3`），各仓 batchmode 编译/EditMode 测试全绿并已推送 |
-| **Phase 3** | 纳入含第三方耦合的共享类（`GameDebugger`/`ZipUtil`/`UIAdaptor`/`LogAdaptor`），以 **Core.Optional 子程序集**形式评估，避免 Core 主体背第三方依赖 | 待评估 |
+| **Phase 3** | 含第三方耦合的共享类（`GameDebugger`/`ZipUtil`/`UIAdaptor`/`LogAdaptor`）：因 UPM 包无法引用工程内第三方，**不纳入 Core、改为副本对齐**——`UIAdaptor` P0 回填、`GameDebugger` 对齐 canonical（Demo 保留有意禁用），`ZipUtil`/`LogAdaptor` 已一致 | **已完成**（副本对齐，详见 [ADR-0003](../adr/0003-phase3-改为副本对齐.md)；GGNetwork `407cfb0`、GGUI `e3af9ea`、Demo `df3c415`） |
 | **Phase 4** | 收敛命名空间到 `GGFramework.*`；为 GGResource/GGUI 自有核心补 asmdef 边界；引入 CI（Core 先行） | 远期 |
 
 ### 6.1 Phase 2 逐仓库接线的标准动作
@@ -198,7 +198,7 @@ Core 包内 `Tests/` 属 UPM 包测试，**消费工程须在 `manifest.json` �
 |---|---|---|
 | ~~**本机无法验证多数仓库**~~（已消除） | 5 工程已统一到 6000.3.13f1，本机可真实编译/测试全部仓库 | Phase 2 各仓均经 batchmode 编译/测试验证后推送 |
 | ~~**Demo 接 Core 兼容性**~~（已消除） | Demo 已升级到 6000.3.13f1（≥ Core `unity:2021.3` 下限）并完成接线 | Demo `TaskSystem` 从全局命名空间迁到 `using GGFramework.GGTask`，编译 exit 0 |
-| **Phase 3 类合并成本** | `GameDebugger`×3 版本差异大，合并需先统一行为 | 以 Core.Optional 子程序集承接，先合并再纳入 |
+| ~~**Phase 3 类合并成本**~~（已处置） | `GameDebugger`×3 版本差异大 | 勘察确认 UPM 包无法引用工程内第三方，改为**副本对齐**：GGUI/Demo 对齐 canonical（Demo 保留有意禁用）、`UIAdaptor` P0 回填，详见 [ADR-0003](../adr/0003-phase3-改为副本对齐.md) |
 | **命名空间收敛的破坏性** | Phase 4 改命名空间会影响所有引用点 | 放在最后、分模块推进，每次配回归测试 |
 | **文档漂移** | 多仓库文档若各写一份会重演代码漂移 | 跨仓库内容只在 `GGFramework-Docs` 写一份，模块 README 链接回这里 |
 
@@ -208,6 +208,7 @@ Core 包内 `Tests/` 属 UPM 包测试，**消费工程须在 `manifest.json` �
 
 - Core：包名 `com.gonglei.ggframework.core`，仓库根即包根；tag `v0.1.0`(commit `0d4f009`) → `v0.1.1`(commit `a5395876`，热修 `Singleton` 补 `Application.isPlaying` 守卫）。
 - Phase 2 全量接线（均锁 Core `#v0.1.1`，已推送）：GGResource `ec7dfc9`、GGUI `1c0b631`（master）、GGNetwork `c439bf2`、GGUser `c77b466`、Demo `107ffe3`。
+- Phase 3 副本对齐（已完成，详见 ADR-0003）：`UIAdaptor` P0 回填 GGNetwork `407cfb0`、`GameDebugger` GGUI 对齐 canonical `e3af9ea`、Demo 清理+保留禁用 `df3c415`；`ZipUtil`/`LogAdaptor` 核对已一致。含第三方耦合的类**不纳入 Core**（UPM 包无法引用工程内第三方）。
 - 单一源引用写法：`"com.gonglei.ggframework.core": "https://github.com/gonglei007/GGFramework-Core.git#v0.1.1"`。
 - 两条硬约束：全局命名空间类型的**二义性**（引用+删副本同批）、asmdef 引用**不具传递性**（测试程序集也要直接引用 Core.Runtime）。
 - Demo 特例：其 `TaskSystem` 副本原在**全局命名空间**，Core 版在 `GGFramework.GGTask`，故删副本后 5 个调用文件须补 `using GGFramework.GGTask;`；Demo 零 asmdef，靠 Core.Runtime 的 `autoReferenced` 被 `Assembly-CSharp` 自动引用。
