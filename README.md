@@ -32,6 +32,8 @@ GGFramework 由多个**彼此独立的 Git 仓库**组成，父目录 `d:\Works\
   - [ADR-0001 Core 抽为独立仓库](adr/0001-core-独立仓库.md)
   - [ADR-0002 vendoring → UPM 迁移路线](adr/0002-vendoring-转-upm-迁移路线.md)
   - [ADR-0003 Phase 3 改为副本对齐](adr/0003-phase3-改为副本对齐.md)
+- **路线图 / 开发计划**
+  - [贴纸游戏 Unity 移植驱动的能力扩展计划](roadmap/sticker-game-unity-porting.md)：**前瞻提案**——由《贴纸小日子》浏览器原型移植 Unity 驱动，盘点框架能力缺口，给出拟新增底层模块（`GGSave`/`GGAudio`/`GGLocalization`/`GGAds` 等）、现有模块改良清单与分阶段路线（重大取舍待另立 ADR）
 
 ## 现状速览
 
