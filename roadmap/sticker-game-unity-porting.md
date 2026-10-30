@@ -3,6 +3,7 @@
 > **文档状态**：提案 / 草案（Proposed）。本文是**前瞻性能力扩展计划**，不是已拍板的架构决策。
 > **驱动来源**：浏览器发行原型《贴纸小日子 / Cozy Sticker Day》（`d:\Works\oi-games\sticker-game\prototype`，含 Node 服务端 `server/`）。其技术文档明确「本原型用于发行展示，**后续正式客户端使用 Unity**」。
 > **更新日期**：2026-10-30。
+> **决策更新（2026-10-30）**：① `GGSave` **暂不做**——游戏数据改为存储到服务端，本机存档不作为独立客户端模块；② `GGAudio` **放缓**（降为 P2 / 待排期）；③ **Core 增补三件套已落地**——对象池 `Pool<T>`/`GameObjectPool`、状态机 `StateMachine<TState>`、事件总线 `EventBus` 已随 **Core v0.2.0** 发布（`GGFramework.Core` 命名空间，零第三方依赖，44 个 EditMode 用例全绿）。代次令牌仍未落地。
 > **与现有文档的关系**：[整体技术方案](../architecture/technical-solution.md) 是「现状治理（消除副本漂移、Phase 0–4）」的统领方案；本文是「面向新游戏（贴纸游戏）落地时，GGFramework 还应补齐/改良哪些能力」的**扩展计划**，不改动既有 Phase 0–4 结论。凡涉及**新建独立仓库、存档后端选型、UGUI 落地**等重大取舍，应在推进时**另立 ADR**（见 §7、§8），本文不代为拍板。
 
 ---
@@ -53,9 +54,9 @@
 | UI 页面/窗口/弹窗/加载 | **GGUI** | 🟡 部分 | 五层 UI 生命周期 + 接口层抽象；**UGUI 仍占位、缺路由/Toast/动效** |
 | 资源加载双路径 | **GGResource** | 🟡 部分 | Simulation/AB 双路径、优先级、缓存已有；**缺预算淘汰、请求取消/去重、引用计数** |
 | 启动依赖编排 | Core + GGResource | 🟡 部分 | 有单例/协程/TaskSystem，缺**启动流程编排器** |
-| 对象池 / 状态机 / 事件总线 | Core | 🟡 部分 | GGUser 借第三方 MonsterLove.StateMachine；Core 无 FSM/事件总线/对象池 |
-| **存档 / 持久化** | — | ❌ 缺口 | 框架完全没有，原型却很重 |
-| **音频** | (Demo `SoundSystem`) | ❌ 缺口 | 非框架级模块 |
+| 对象池 / 状态机 / 事件总线 | Core | ✅ 已落地(v0.2.0) | Core v0.2.0 增补 `Pool<T>`/`GameObjectPool`/`StateMachine<TState>`/`EventBus`（`GGFramework.Core` 命名空间，零依赖）；GGUser 可据此去掉第三方 MonsterLove |
+| **存档 / 持久化** | 服务端 | ⚪ 已决策不做客户端模块 | 数据改为服务端存储（2026-10-30 决策）；`GGSave` 本机存档暂不落地，客户端至多保留轻量 DTO/缓存并经 GGNetwork 走服务端 |
+| **音频** | (Demo `SoundSystem`) | 🟡 放缓 | 2026-10-30 决策降为 P2 / 待排期，非当前优先 |
 | **本地化** | (GGUI NGUI 专属) | ❌ 缺口 | 无框架级 i18n |
 | **经济 / 道具 / 元系统** | — | ❌ 缺口 | |
 | **每日 / 签到 / 成就** | — | ❌ 缺口 | |
@@ -72,7 +73,9 @@
 
 ### 4.1 P0 — 几乎每个 Unity 游戏都要，且原型已证明需求真实
 
-#### 4.1.1 `GGSave`（存档 / 持久化）—— 最该补的一块
+#### 4.1.1 ~~`GGSave`（存档 / 持久化）~~ —— 【已决策暂不做：数据存服务端】
+
+> **2026-10-30 决策**：游戏数据改为存储到服务端，本机存档不作为独立客户端模块落地。下列需求保留为「服务端契约 + 客户端轻量 DTO/缓存」的参考，客户端持久化经 GGNetwork 走服务端；正式的服务端存档契约待另立 ADR。
 
 对标 `save-repository.js` / `store.js`，需求清单：
 
@@ -82,19 +85,19 @@
 - **快照隔离**：`Snapshot()` 返回深拷贝，禁止业务直接改存档对象。
 - 导入 / 导出 / 脱敏、写盘节流与 `OnApplicationPause/Quit` 落盘。
 
-#### 4.1.2 `GGAudio`（音频）—— 对标 `audio.js`
+#### 4.1.2 `GGAudio`（音频）—— 对标 `audio.js`【已放缓：降为 P2 / 待排期】
 
 - SFX / BGM 双通道 + 独立音量 + 开关持久化（依赖 `GGSave`）。
 - 按需加载 + 预热、应用失焦/后台自动暂停恢复、voice 上限与回收。
 - BGM ducking（语音/剧情播放时压低背景乐）、加载失败兜底。
 - 与 Unity `AudioMixer` 对接（分组/闪避用 Mixer 的 Ducking）。
 
-#### 4.1.3 Core 增补：对象池 / 状态机 / 事件总线 / 代次令牌
+#### 4.1.3 Core 增补：对象池 / 状态机 / 事件总线【已落地 v0.2.0】/ 代次令牌【待办】
 
-- **对象池**：贴纸海量实例化；Demo 的 Lua 层已有 ObjectPool，应下沉为 C# 通用池进 Core。
-- **轻量状态机**：玩法会话（`session.js`）与登录支付（GGUser 现借第三方 MonsterLove）都需要；Core 提供零依赖 FSM 可去掉第三方绑定。
-- **全局事件总线 / 消息**：原型大量用 `window.dispatchEvent`（`sticker:ready`、`sticker:auth-ending`）解耦，Unity 侧需要中央事件系统。
-- **generation / 代次令牌**：原型「离开关卡即失效旧代次，旧加载/回调不影响新关卡」是异步生命周期管理的通用痛点，值得进 Core 或协程工具。
+- ✅ **对象池**（已落地 v0.2.0）：`Pool<T>`（泛型 POCO，工厂 + onGet/onRelease 回调 + 预热 + maxSize）与 `GameObjectPool`（预制体克隆、SetActive 复用）；对标贴纸海量实例化，从 Demo Lua 层下沉为 C# 通用池。
+- ✅ **轻量状态机**（已落地 v0.2.0）：`StateMachine<TState>` 零依赖 FSM（Configure/ChangeState/Update 转发/转移守卫/StateChanged），可去掉 GGUser 对第三方 MonsterLove 的绑定。
+- ✅ **全局事件总线**（已落地 v0.2.0）：`EventBus` 类型安全 Subscribe/Unsubscribe/Publish，快照派发；对标原型大量使用的 `window.dispatchEvent`（`sticker:ready`、`sticker:auth-ending`）解耦。
+- ⏳ **generation / 代次令牌**（待办）：原型「离开关卡即失效旧代次，旧加载/回调不影响新关卡」是异步生命周期管理的通用痛点，尚未落地，后续可进 Core 或协程工具。
 - （可选）**Result / 错误码类型**、**JSON 抽象**：各模块现各自绑 SimpleJson，Core 统一后可减少副本漂移，与既有「副本对齐」治理方向一致。
 
 ### 4.2 P1 — 商业休闲游戏标配
@@ -157,10 +160,10 @@
 
 | 阶段 | 内容 | 产出 |
 |---|---|---|
-| **阶段 0 · 基础设施** | Core 增补（对象池/状态机/事件总线）+ `GGSave` + `GGAudio` + `GGLocalization` | 所有上层的地基；原型已给出完整需求样本 |
+| **阶段 0 · 基础设施** | ✅ Core 增补（对象池/状态机/事件总线，v0.2.0 已发布）；~~`GGSave`~~（改服务端）；`GGAudio` 放缓；`GGLocalization` 待排期 | 三件套已落地；存档走服务端、音频降优先级（2026-10-30 决策） |
 | **阶段 1 · 资源管线** | GGResource 补预算淘汰/取消/引用计数/进度事件 + `GGConfig` 内容清单 | 支撑海量贴纸的按需加载与内存可控 |
 | **阶段 2 · UI / 导航** | GGUI 落地 UGUI + Toast/路由/动效/安全区，接资源进度 | 完整 UI 外壳 |
-| **阶段 3 · 网络 / 账户 / 云存档** | GGNetwork session + GGUser 游戏服认证 + GGSave 云后端 | 单机→联网的关键节点（见 §7） |
+| **阶段 3 · 网络 / 账户 / 服务端存档** | GGNetwork session + GGUser 游戏服认证 + 服务端存档契约（数据存服务端，替代原 `GGSave` 云后端） | 单机→联网的关键节点（见 §7） |
 | **阶段 4 · 商业化 / 元系统** | `GGAds` + `GGMeta`（经济/成就/每日）+ `GGAnalytics` | 变现与运营闭环 |
 | **阶段 5 · 玩法层** | 贴纸场景渲染/相机/拖放（主要靠 Unity 原生 + Input System）+ `GGGuide` + 语音陪伴 + `GGMedia` | 具体游戏玩法 |
 
@@ -172,7 +175,7 @@
 
 | # | 待决策项 | 影响 | 备注 |
 |---|---|---|---|
-| Q1 | **单机本地存档 vs 云存档 + 服务端权威结算** | 决定 `GGSave` 后端与阶段 3 是否启动 | 原型技术文档称云存档/权威结算为「后续联网产品化工作」，当前是本地 localStorage |
+| Q1 | ~~单机本地存档 vs 云存档~~ **已决策：数据存服务端** | `GGSave` 客户端本机存档模块取消；持久化经 GGNetwork 走服务端 | 2026-10-30 决策；服务端存档契约/权威结算细节待另立 ADR |
 | Q2 | **UGUI 落地 vs 继续 NGUI** | 决定 GGUI `Implementation/UGUI` 投入与美术管线 | GGUser Demo 已用 uGUI；休闲游戏主流为 UGUI |
 | Q3 | **新模块的仓库形态** | 独立 Git 仓库 / Core 子包 / 归入现有功能模块 | 涉及是否复用 Core 单一源模型、是否新增 UPM 包名 |
 | Q4 | **`GGAds` 独立 vs 并入 GGUser** | GGUser 已有 IAP 聚合，广告与之同属商业化 | 二者常由同一聚合平台 SDK 提供 |
