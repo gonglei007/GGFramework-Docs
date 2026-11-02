@@ -126,3 +126,21 @@ graph LR
 | `subgraph` 分层 | 集成层 / 功能模块层 / 基础设施层 / 第三方依赖 |
 
 > 现状与目标的**逐仓库拷贝关系图**（哪份源码被拷进哪个仓库）见 [dependency-graph.md](dependency-graph.md) §1–§2，此处不重复。
+
+---
+
+## 5. 图表格式与维护约定
+
+GGFramework 的图表分两类载体，按「是否随文档/代码频繁演进、是否需要精细视觉排版」选择，**同一张图不两种载体并存**（避免源与导出漂移）。
+
+| 载体 | 适用场景 | 位置约定 | 现状 |
+|---|---|---|---|
+| **mermaid**（内嵌 markdown 代码块） | 结构化、易随代码变动的图：类图 / 时序图 / 状态机 / 流程图 / 依赖图 | 直接写在 `README.md` 或 `architecture/*.md` 内，GitHub 原生渲染，零外部工具链 | Docs 分层架构/依赖图；GGUI UI 接口层类图 + 分层流程；GGResource 加载流程；GGNetwork HTTP/WebSocket/下载时序图 |
+| **draw.io**（`.drawio` 源 + `.svg`/`.png` 导出） | 需自由布局/配色/图标、作为「架构海报」长期挂 README 的总览图 | 源文件放 `documents/diagrams/`（GGUser）或 `documents/TDD/`（GGNetwork），导出图放同目录或 `documents/exports/`，README 以图片引用 | GGUser 架构/登录-支付时序/状态机/渠道路由（8 图）；GGNetwork 架构 + TDD 流程（2 图） |
+
+**选择原则**：
+
+1. 新增**类图 / 时序图 / 状态机 / 依赖图**等结构化图，**优先 mermaid 内嵌**——改图即改文本、评审 diff 可读、无需 draw.io 工具链，且 GitHub/GGFramework-Docs 均原生渲染。
+2. 需要**精细排版与视觉表达**的**总览海报**（如 GGUser 分层架构）用 **draw.io**，并同时提交 `.drawio` 源与导出图，README 只引用导出图（遵循 GGNetwork 既有约定）。
+3. **每个模块 README 至少内嵌一张“最关键图”**供读者快速浏览：有接口抽象层的画类图（GGUI），有多方交互链路的画时序图（GGNetwork / GGUser），纯流程的画流程图（GGResource）。Core / Demo 为零依赖工具库与集成演示，复杂度不足以“必要”配图，维持纯文字 README。
+4. 图必须**先核实真实源码结构再落笔**（类名/接口/继承/调用链），不得凭 README 旧描述或记忆作图，避免图与代码漂移。
