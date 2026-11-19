@@ -21,6 +21,8 @@ GGFramework 由多个**彼此独立的 Git 仓库**组成，父目录 `d:\Works\
 
 ## 文档导航
 
+- **可运行的集成体验**：[Demo 开发者体验指南](https://github.com/gonglei007/GGFramework-Demo/blob/main/documents/showcase-guide.md)。独立大厅覆盖 Core 0.3.0、本地资源与 AssetBundle、回环 HTTP、UI 页面栈、模拟 SDK 与 Lua 规则。当前 Demo 使用同级 Core 的本地 UPM 引用；这是开发联调布局，未修改其他模块的发布依赖。
+
 - **架构**
   - [整体技术方案](architecture/technical-solution.md)：**统领性方案**——目标/原则、分层架构、各模块技术定位、集成机制、迁移路线、工程规范、测试/CI 与风险
   - [GGFramework 架构图](architecture/architecture-diagram.md)：分层架构总览、Phase 2 接线进度、Core 引用约束（mermaid 可视化）
